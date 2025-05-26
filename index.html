@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>移機方案問答樹</title>
+  <style>
+    body { font-family: sans-serif; padding: 2em; max-width: 600px; margin: auto; }
+    .question { margin-bottom: 1em; }
+    .option { display: block; margin: 0.5em 0; cursor: pointer; }
+    .result { margin-top: 2em; font-weight: bold; color: green; }
+  </style>
+</head>
+<body>
+  <h1>移機方案自動問答</h1>
+  <div id="qa"></div>
+  <div class="result" id="result"></div>
+
+  <script>
+    const tree = {
+      question: "一、您的到期日狀況是？",
+      options: {
+        "續繳單已出": {
+          question: "二、新社區目前是否可上線？",
+          options: {
+            "上線中": {
+              question: "三、新社區網路架構為？",
+              options: {
+                "乙太": {
+                  solution: "移機當日續繳8900元/6000元，免收移機施工費用1200元"
+                },
+                "光化F": {
+                  solution: "移機當日續繳8900元/6000元，免收移機施工費用1200元"
+                },
+                "光化FP": {
+                  solution: "移機當日續繳8900元/6000元，免收移機施工費用1200元，光轉器屬贈品(價值600元)"
+                }
+              }
+            },
+            "未上線": {
+              solution: "目前新社區尚未開放，暫無法受理移機服務。"
+            }
+          }
+        },
+        "一年內到期": {
+          question: "二、新社區目前是否可上線？",
+          options: {
+            "上線中": {
+              question: "三、新社區網路架構為？",
+              options: {
+                "乙太": { solution: "移機當日續繳8900元/6000元，免收移機施工費用1200元" },
+                "光化F": { solution: "移機當日續繳8900元/6000元，免收移機施工費用1200元" },
+                "光化FP": { solution: "移機當日續繳8900元/6000元，免收移機施工費用1200元，光轉器屬贈品(價值600元)" }
+              }
+            },
+            "未上線": {
+              solution: "目前新社區尚未開放，暫無法受理移機服務。"
+            }
+          }
+        },
+        "一年後到期": {
+          question: "二、新社區目前是否可上線？",
+          options: {
+            "上線中": {
+              question: "三、新社區網路架構為？",
+              options: {
+                "乙太": { solution: "移機當日續繳8900元/6000元，免收移機施工費用1200元" },
+                "光化F": { solution: "移機當日續繳8900元/6000元，免收移機施工費用1200元" },
+                "光化FP": { solution: "移機當日續繳8900元/6000元，免收移機施工費用1200元，光轉器屬贈品(價值600元)" }
+              }
+            },
+            "未上線": {
+              solution: "目前新社區尚未開放，暫無法受理移機服務。"
+            }
+          }
+        }
+      }
+    };
+
+    const qaDiv = document.getElementById('qa');
+    const resultDiv = document.getElementById('result');
+
+    let currentNode = tree;
+
+    function render(node) {
+      qaDiv.innerHTML = '';
+      resultDiv.innerHTML = '';
+
+      const question = document.createElement('div');
+      question.className = 'question';
+      question.textContent = node.question;
+      qaDiv.appendChild(question);
+
+      for (const [text, next] of Object.entries(node.options)) {
+        const btn = document.createElement('button');
+        btn.className = 'option';
+        btn.textContent = text;
+        btn.onclick = () => {
+          if (next.solution) {
+            qaDiv.innerHTML = '';
+            resultDiv.textContent = next.solution;
+          } else {
+            render(next);
+          }
+        };
+        qaDiv.appendChild(btn);
+      }
+    }
+
+    render(currentNode);
+  </script>
+</body>
+</html>
