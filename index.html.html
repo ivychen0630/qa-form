@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>移機方案問答</title>
+  <style>
+    body { font-family: sans-serif; padding: 2em; max-width: 600px; margin: auto; }
+    .question { margin-bottom: 1em; }
+    .option { display: block; margin: 0.5em 0; cursor: pointer; }
+    .result { margin-top: 2em; font-weight: bold; color: green; }
+  </style>
+</head>
+<body>
+  <h1>移機方案問答互動網頁</h1>
+  <div id="qa"></div>
+  <div class="result" id="result"></div>
+
+  <script>
+    const solutions = {
+      "續繳單已出|光化F|押金|是|上線中|光化F|是": "方案2｜當日續繳免移機費，免光轉器費",
+      "續繳單已出|光化F|押金|是|未上線": "不可遷移｜新址尚未開通，請確認是否等候開發"
+    };
+
+    const questions = [
+      { key: "到期狀況", text: "1. 您的網路到期狀況？", options: ["續繳單已出", "一年內到期", "一年後到期"] },
+      { key: "舊址架構", text: "2. 舊址社區架構為？", options: ["光化F", "光化FP", "乙太"] },
+      { key: "舊設備狀態", text: "3. 舊址光轉器狀態為？", options: ["押金", "贈品", "自購", "無"] },
+      { key: "曾提及移機", text: "4. 是否曾提及移機計畫？", options: ["是", "否"] },
+      { key: "新社區狀態", text: "5. 新社區目前是否可上線？", options: ["上線中", "未上線"] },
+      { key: "新址架構", text: "6. 新址社區架構為？", options: ["光化F", "光化FP", "乙太"], dependsOn: "新社區狀態", showIf: "上線中" },
+      { key: "當日續繳", text: "7. 是否為新址當日續繳？", options: ["是", "否"], dependsOn: "新社區狀態", showIf: "上線中" }
+    ];
+
+    const answers = {};
+    const qaDiv = document.getElementById("qa");
+    const resultDiv = document.getElementById("result");
+
+    function render(index) {
+      if (index >= questions.length) {
+        const key = [
+          answers["到期狀況"],
+          answers["舊址架構"],
+          answers["舊設備狀態"],
+          answers["曾提及移機"],
+          answers["新社區狀態"]
+        ];
+
+        if (answers["新社區狀態"] === "上線中") {
+          key.push(answers["新址架構"]);
+          key.push(answers["當日續繳"]);
+        }
+
+        const joined = key.join("|");
+        resultDiv.textContent = solutions[joined] || "尚無對應方案，請聯繫客服";
+        qaDiv.innerHTML = "";
+        return;
+      }
+
+      const q = questions[index];
+      if (q.dependsOn && answers[q.dependsOn] !== q.showIf) {
+        render(index + 1);
+        return;
+      }
+
+      qaDiv.innerHTML = `<div class="question">${q.text}</div>`;
+      q.options.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.className = "option";
+        btn.textContent = opt;
+        btn.onclick = () => {
+          answers[q.key] = opt;
+          render(index + 1);
+        };
+        qaDiv.appendChild(btn);
+      });
+    }
+
+    render(0);
+  </script>
+</body>
+</html>
