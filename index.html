@@ -1,81 +1,118 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>移機方案問答</title>
+  <title>移機方案確認工具</title>
   <style>
-    body { font-family: sans-serif; padding: 2em; max-width: 600px; margin: auto; }
+    body { font-family: sans-serif; max-width: 700px; margin: auto; padding: 2em; }
+    .section { display: none; }
+    .active { display: block; }
+    h2 { margin-top: 1.5em; }
     .question { margin-bottom: 1em; }
-    .option { display: block; margin: 0.5em 0; cursor: pointer; }
-    .result { margin-top: 2em; font-weight: bold; color: green; }
+    button { margin: 1em 0.5em 0 0; }
+    .result { font-weight: bold; color: green; margin-top: 2em; }
   </style>
 </head>
 <body>
-  <h1>移機方案問答互動網頁</h1>
-  <div id="qa"></div>
-  <div class="result" id="result"></div>
+  <h1>移機方案確認工具</h1>
+
+  <!-- 第一層 -->
+  <div class="section active" id="page1">
+    <h2>第一層：舊址資訊</h2>
+    <div class="question">1. 到期狀況：
+      <select id="到期狀況">
+        <option>續繳單已出</option>
+        <option>一年內到期</option>
+        <option>一年後到期</option>
+      </select>
+    </div>
+    <div class="question">2. 舊址架構：
+      <select id="舊址架構">
+        <option>光化F</option>
+        <option>光化FP</option>
+        <option>乙太</option>
+      </select>
+    </div>
+    <div class="question">3. 舊光轉器狀態：
+      <select id="舊設備狀態">
+        <option>押金</option>
+        <option>贈品</option>
+        <option>自購</option>
+        <option>無</option>
+      </select>
+    </div>
+    <div class="question">4. 是否曾提及移機：
+      <select id="曾提及移機">
+        <option>是</option>
+        <option>否</option>
+      </select>
+    </div>
+    <button onclick="nextPage(1)">下一步</button>
+  </div>
+
+  <!-- 第二層 -->
+  <div class="section" id="page2">
+    <h2>第二層：新社區狀況</h2>
+    <div class="question">5. 新社區是否已上線？
+      <select id="新社區狀態">
+        <option>上線中</option>
+        <option>未上線-有意願等候</option>
+        <option>未上線-無意願等候</option>
+      </select>
+    </div>
+    <button onclick="nextPage(2)">下一步</button>
+  </div>
+
+  <!-- 第三層 -->
+  <div class="section" id="page3">
+    <h2>第三層：新址資訊</h2>
+    <div class="question">6. 新址架構：
+      <select id="新址架構">
+        <option>光化F</option>
+        <option>光化FP</option>
+        <option>乙太</option>
+      </select>
+    </div>
+    <div class="question">7. 是否為當日續繳：
+      <select id="當日續繳">
+        <option>是</option>
+        <option>否</option>
+      </select>
+    </div>
+    <button onclick="nextPage(3)">看結果</button>
+  </div>
+
+  <!-- 第四層：結果 -->
+  <div class="section" id="page4">
+    <h2>第四層：對應方案</h2>
+    <div id="output" class="result">（根據邏輯自動對應）</div>
+    <button onclick="location.reload()">重新查詢</button>
+  </div>
 
   <script>
-    const solutions = {
-      "續繳單已出|光化F|押金|是|上線中|光化F|是": "方案2｜當日續繳免移機費，免光轉器費",
-      "續繳單已出|光化F|押金|是|未上線": "不可遷移｜新址尚未開通，請確認是否等候開發"
+    const rules = {
+      "續繳單已出|光化F|押金|是|上線中|光化F|是": "移機當日續繳8900元/6000元，免收移機施工費用1200元，光轉器押金沿用。",
+      "續繳單已出|光化F|押金|是|未上線-有意願等候": "新址尚未進駐，有意願等候開發，故幫追蹤社區開發。",
+      "續繳單已出|光化F|押金|是|未上線-無意願等候": "新址尚未進駐，無意願等候開發，故協助退費或月份轉移。"
     };
 
-    const questions = [
-      { key: "到期狀況", text: "1. 您的網路到期狀況？", options: ["續繳單已出", "一年內到期", "一年後到期"] },
-      { key: "舊址架構", text: "2. 舊址社區架構為？", options: ["光化F", "光化FP", "乙太"] },
-      { key: "舊設備狀態", text: "3. 舊址光轉器狀態為？", options: ["押金", "贈品", "自購", "無"] },
-      { key: "曾提及移機", text: "4. 是否曾提及移機計畫？", options: ["是", "否"] },
-      { key: "新社區狀態", text: "5. 新社區目前是否可上線？", options: ["上線中", "未上線"] },
-      { key: "新址架構", text: "6. 新址社區架構為？", options: ["光化F", "光化FP", "乙太"], dependsOn: "新社區狀態", showIf: "上線中" },
-      { key: "當日續繳", text: "7. 是否為新址當日續繳？", options: ["是", "否"], dependsOn: "新社區狀態", showIf: "上線中" }
-    ];
+    function nextPage(current) {
+      document.getElementById('page' + current).classList.remove('active');
+      document.getElementById('page' + (current + 1)).classList.add('active');
 
-    const answers = {};
-    const qaDiv = document.getElementById("qa");
-    const resultDiv = document.getElementById("result");
-
-    function render(index) {
-      if (index >= questions.length) {
-        const key = [
-          answers["到期狀況"],
-          answers["舊址架構"],
-          answers["舊設備狀態"],
-          answers["曾提及移機"],
-          answers["新社區狀態"]
+      if (current === 3) {
+        const keys = [
+          '到期狀況', '舊址架構', '舊設備狀態', '曾提及移機',
+          '新社區狀態'
         ];
-
-        if (answers["新社區狀態"] === "上線中") {
-          key.push(answers["新址架構"]);
-          key.push(answers["當日續繳"]);
+        if (document.getElementById('新社區狀態').value === '上線中') {
+          keys.push('新址架構', '當日續繳');
         }
-
-        const joined = key.join("|");
-        resultDiv.textContent = solutions[joined] || "尚無對應方案，請聯繫客服";
-        qaDiv.innerHTML = "";
-        return;
+        const userKey = keys.map(k => document.getElementById(k).value).join('|');
+        document.getElementById('output').innerText = rules[userKey] || '尚無對應方案，請聯繫客服。';
       }
-
-      const q = questions[index];
-      if (q.dependsOn && answers[q.dependsOn] !== q.showIf) {
-        render(index + 1);
-        return;
-      }
-
-      qaDiv.innerHTML = `<div class="question">${q.text}</div>`;
-      q.options.forEach(opt => {
-        const btn = document.createElement("button");
-        btn.className = "option";
-        btn.textContent = opt;
-        btn.onclick = () => {
-          answers[q.key] = opt;
-          render(index + 1);
-        };
-        qaDiv.appendChild(btn);
-      });
     }
-
-    render(0);
   </script>
 </body>
 </html>
