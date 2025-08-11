@@ -1,141 +1,93 @@
-
 <!DOCTYPE html>
+
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <title>移機方案確認工具</title>
-  <style>
-    body { font-family: sans-serif; max-width: 700px; margin: auto; padding: 2em; }
-    .section { display: none; }
-    .active { display: block; }
-    h2 { margin-top: 1.5em; }
-    .question { margin-bottom: 1em; }
-    button { margin: 1em 0.5em 0 0; }
-    .result { font-weight: bold; color: green; margin-top: 2em; }
+<meta charset="utf-8"/>
+<title>移機查詢 v10-3 含設備品項</title>
+<style>
+    body { font-family: sans-serif; padding: 2em; max-width: 900px; margin: auto; background: #e6f5ff; }
+    h1 { text-align: center; color: #265c8a; }
+    .block { background: #fff; padding: 1.2em; border-radius: 10px; margin-bottom: 2em; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    label { display: block; margin-bottom: .8em; cursor: pointer; }
+    input[type="radio"], input[type="checkbox"] { transform: scale(1.2); margin-right: .5em; }
+    #output, #device { white-space: pre-line; background: #fff; padding: 1em; border-radius: 10px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); margin-top: 1em; }
+    button { margin-right: 1em; padding: .6em 1.2em; font-size: 1em; }
   </style>
 </head>
 <body>
-  <h1>移機方案確認工具</h1>
+<h1>移機查詢（含設備品項）</h1>
+<div class="block">
+<h2>1️⃣ 舊址設備類型</h2>
+<label><input name="old" type="radio" value="乙太"/>乙太</label>
+<label><input name="old" type="radio" value="光化F(押金)"/>光化F(押金)</label>
+<label><input name="old" type="radio" value="光化F(贈品)"/>光化F(贈品)</label>
+<label><input name="old" type="radio" value="光化F(自購)"/>光化F(自購)</label>
+<label><input name="old" type="radio" value="光化FP(贈品)"/>光化FP(贈品)</label>
+<label><input name="old" type="radio" value="光化FP(自購)"/>光化FP(自購)</label>
+</div>
+<div class="block">
+<h2>2️⃣ 新址設備架構</h2>
+<label><input name="new" type="radio" value="乙太"/>乙太</label>
+<label><input name="new" type="radio" value="光化F"/>光化F</label>
+<label><input name="new" type="radio" value="光化FP"/>光化FP</label>
+</div>
+<div class="block">
+<h2>3️⃣ 移機方案</h2>
+<label><input name="plan" type="radio" value="提前續繳"/>提前續繳8900/6000元，免收移機施工費用</label>
+<label><input name="plan" type="radio" value="舊址備註"/>舊址續繳備註此次免收移機施工費用</label>
+<label><input name="plan" type="radio" value="支付1200"/>支付移機施工費用1200元</label>
+<label><input name="plan" type="radio" value="優待800"/>用戶抱怨，優待移機施工費用800元</label>
+</div>
+<div class="block">
+<h2>4️⃣ 補充條件</h2>
+<strong>⚠️ 務必提醒用戶：</strong>
+<label><input id="refundPolicy" type="checkbox"/>已申明退費規範</label><label><input id="deviceRight" type="checkbox"/> 已提醒需攜帶設備</label>
+<label><input id="transferMonth" type="checkbox"/>待新址結單後月份轉移</label>
+<strong>🔔 補充提醒（依當下情境判斷是否說明）：</strong>
+<label><input id="groupBuy" type="checkbox"/>可參與團購優惠</label>
+<label><input id="ap保固" type="checkbox"/>舊址有終保AP</label>
+</div>
+<button onclick="generate()">產生移機方案說明</button>
+<div class="block" id="output"></div>
+<div class="block" id="device"></div>
+<script>
+const solutionMap = {"乙太|乙太|提前續繳": {"說明": "提前續繳8900/6000元，免收移機施工費用", "設備品項": "新址無需光轉器設備"}, "乙太|乙太|舊址備註": {"說明": "免收移機施工費用", "設備品項": "新址無需光轉器設備"}, "乙太|乙太|支付1200": {"說明": "移機當日支付1200元移機施工費用", "設備品項": "新址無需光轉器設備"}, "乙太|乙太|優待800": {"說明": "移機當日支付800元移機施工費用", "設備品項": "新址無需光轉器設備"}, "乙太|光化F|提前續繳": {"說明": "提前續繳8900/6000元，免收移機施工費用，光轉器屬贈品(價值600元)", "設備品項": "TP-Link FC311B-3 光纖收發器+600【贈品】*1=0"}, "乙太|光化F|舊址備註": {"說明": "免收移機施工費用，加購光轉器600元", "設備品項": "TP-Link FC311B-3 光纖收發器*1=600"}, "乙太|光化F|支付1200": {"說明": "移機當日支付1200元移機施工費用，加購光轉器600元", "設備品項": "TP-Link FC311B-3 光纖收發器*1=600"}, "乙太|光化F|優待800": {"說明": "移機當日支付800元移機施工費用，加購光轉器600元", "設備品項": "TP-Link FC311B-3 光纖收發器*1=600"}, "乙太|光化FP|提前續繳": {"說明": "提前續繳8900/6000元，免收移機施工費用，光轉器屬贈品(價值600元)", "設備品項": "NF810-1K用戶端光電轉換器+600【贈品】*1=0"}, "乙太|光化FP|舊址備註": {"說明": "免收移機施工費用，加購光轉器600元", "設備品項": "NF810-1K用戶端光電轉換器*1=600"}, "乙太|光化FP|支付1200": {"說明": "移機當日支付1200元移機施工費用，加購光轉器600元", "設備品項": "NF810-1K用戶端光電轉換器*1=600"}, "乙太|光化FP|優待800": {"說明": "移機當日支付800元移機施工費用，加購光轉器600元", "設備品項": "NF810-1K用戶端光電轉換器*1=600"}, "光化F(押金)|乙太|提前續繳": {"說明": "提前續繳8900/6000元，免收移機施工費用，舊址光轉器收回退押金", "設備品項": "新址無需光轉器設備"}, "光化F(押金)|乙太|舊址備註": {"說明": "免收移機施工費用，舊址光轉器收回退押金", "設備品項": "新址無需光轉器設備"}, "光化F(押金)|乙太|支付1200": {"說明": "移機當日支付1200元移機施工費用，舊址光轉器收回退押金", "設備品項": "新址無需光轉器設備"}, "光化F(押金)|乙太|優待800": {"說明": "移機當日支付800元移機施工費用，舊址光轉器收回退押金", "設備品項": "新址無需光轉器設備"}, "光化F(押金)|光化F|提前續繳": {"說明": "提前續繳8900/6000元，免收移機施工費用，光轉器(押金)沿用", "設備品項": "HAO GAGI光纖收發器(設備押金)*1=0"}, "光化F(押金)|光化F|舊址備註": {"說明": "免收移機施工費用，光轉器(押金)沿用", "設備品項": "HAO GAGI光纖收發器(設備押金)*1=0"}, "光化F(押金)|光化F|支付1200": {"說明": "移機當日支付1200元移機施工費用，光轉器(押金)沿用", "設備品項": "HAO GAGI光纖收發器(設備押金)*1=0"}, "光化F(押金)|光化F|優待800": {"說明": "移機當日支付800元移機施工費用，光轉器(押金)沿用", "設備品項": "HAO GAGI光纖收發器(設備押金)*1=0"}, "光化F(押金)|光化FP|提前續繳": {"說明": "提前續繳8900/6000元，免收移機施工費用，舊址光轉器收回退押金，新址提供一台贈品(價值600元)", "設備品項": "NF810-1K用戶端光電轉換器+600【贈品】*1=0"}, "光化F(押金)|光化FP|舊址備註": {"說明": "免收移機施工費用，舊址光轉器收回退押金，新址加購光轉器600元", "設備品項": "NF810-1K用戶端光電轉換器*1=600"}, "光化F(押金)|光化FP|支付1200": {"說明": "移機當日支付1200元移機施工費用，舊址光轉器收回退押金，新址加購光轉器600元", "設備品項": "NF810-1K用戶端光電轉換器*1=600"}, "光化F(押金)|光化FP|優待800": {"說明": "移機當日支付800元移機施工費用，舊址光轉器收回退押金，新址加購光轉器600元", "設備品項": "NF810-1K用戶端光電轉換器*1=600"}, "光化F(自購)|乙太|提前續繳": {"說明": "提前續繳8900/6000元，免收移機施工費用", "設備品項": "新址無需光轉器設備"}, "光化F(自購)|乙太|舊址備註": {"說明": "免收移機施工費用", "設備品項": "新址無需光轉器設備"}, "光化F(自購)|乙太|支付1200": {"說明": "移機當日支付1200元移機施工費用", "設備品項": "新址無需光轉器設備"}, "光化F(自購)|乙太|優待800": {"說明": "移機當日支付800元移機施工費用", "設備品項": "新址無需光轉器設備"}, "光化F(自購)|光化F|提前續繳": {"說明": "提前續繳8900/6000元，免收移機施工費用，光轉器(自購)沿用", "設備品項": "光纖設備沿用(TP-LINK FC311B-3)*1=0"}, "光化F(自購)|光化F|舊址備註": {"說明": "免收移機施工費用，光轉器(自購)沿用", "設備品項": "光纖設備沿用(TP-LINK FC311B-3)*1=0"}, "光化F(自購)|光化F|支付1200": {"說明": "移機當日支付1200元移機施工費用，光轉器(自購)沿用", "設備品項": "光纖設備沿用(TP-LINK FC311B-3)*1=0"}, "光化F(自購)|光化F|優待800": {"說明": "移機當日支付800元移機施工費用，光轉器(自購)沿用", "設備品項": "光纖設備沿用(TP-LINK FC311B-3)*1=0"}, "光化F(自購)|光化FP|提前續繳": {"說明": "提前續繳8900/6000元，免收移機施工費用，舊址光轉器收回汰換", "設備品項": "NF810-1K用戶端光電轉換器【汰換】*1=0"}, "光化F(自購)|光化FP|舊址備註": {"說明": "免收移機施工費用，舊址光轉器收回汰換", "設備品項": "NF810-1K用戶端光電轉換器【汰換】*1=0"}, "光化F(自購)|光化FP|支付1200": {"說明": "移機當日支付1200元移機施工費用，舊址光轉器收回汰換", "設備品項": "NF810-1K用戶端光電轉換器【汰換】*1=0"}, "光化F(自購)|光化FP|優待800": {"說明": "移機當日支付800元移機施工費用，舊址光轉器收回汰換", "設備品項": "NF810-1K用戶端光電轉換器【汰換】*1=0"}, "光化F(贈品)|乙太|提前續繳": {"說明": "提前續繳8900/6000元，免收移機施工費用", "設備品項": "新址無需光轉器設備"}, "光化F(贈品)|乙太|舊址備註": {"說明": "免收移機施工費用", "設備品項": "新址無需光轉器設備"}, "光化F(贈品)|乙太|支付1200": {"說明": "移機當日支付1200元移機施工費用", "設備品項": "新址無需光轉器設備"}, "光化F(贈品)|乙太|優待800": {"說明": "移機當日支付800元移機施工費用", "設備品項": "新址無需光轉器設備"}, "光化F(贈品)|光化F|提前續繳": {"說明": "提前續繳8900/6000元，免收移機施工費用，光轉器(贈品)沿用", "設備品項": "光纖贈品沿用(TP-LINK FC311B-3)*1=0"}, "光化F(贈品)|光化F|舊址備註": {"說明": "免收移機施工費用，光轉器(贈品)沿用", "設備品項": "光纖贈品沿用(TP-LINK FC311B-3)*1=0"}, "光化F(贈品)|光化F|支付1200": {"說明": "移機當日支付1200元移機施工費用，光轉器(贈品)沿用", "設備品項": "光纖贈品沿用(TP-LINK FC311B-3)*1=0"}, "光化F(贈品)|光化F|優待800": {"說明": "移機當日支付800元移機施工費用，光轉器(贈品)沿用", "設備品項": "光纖贈品沿用(TP-LINK FC311B-3)*1=0"}, "光化F(贈品)|光化FP|提前續繳": {"說明": "提前續繳8900/6000元，免收移機施工費用，舊址光轉器收回汰換", "設備品項": "NF810-1K用戶端光電轉換器+600【汰換】*1=0"}, "光化F(贈品)|光化FP|舊址備註": {"說明": "免收移機施工費用，舊址光轉器收回汰換", "設備品項": "NF810-1K用戶端光電轉換器+600【汰換】*1=0"}, "光化F(贈品)|光化FP|支付1200": {"說明": "移機當日支付1200元移機施工費用，舊址光轉器收回汰換", "設備品項": "NF810-1K用戶端光電轉換器+600【汰換】*1=0"}, "光化F(贈品)|光化FP|優待800": {"說明": "移機當日支付800元移機施工費用，舊址光轉器收回汰換", "設備品項": "NF810-1K用戶端光電轉換器+600【汰換】*1=0"}, "光化FP(自購)|乙太|提前續繳": {"說明": "提前續繳8900/6000元，免收移機施工費用", "設備品項": "新址無需光轉器設備"}, "光化FP(自購)|乙太|舊址備註": {"說明": "免收移機施工費用", "設備品項": "新址無需光轉器設備"}, "光化FP(自購)|乙太|支付1200": {"說明": "移機當日支付1200元移機施工費用", "設備品項": "新址無需光轉器設備"}, "光化FP(自購)|乙太|優待800": {"說明": "移機當日支付800元移機施工費用", "設備品項": "新址無需光轉器設備"}, "光化FP(自購)|光化F|提前續繳": {"說明": "提前續繳8900/6000元，免收移機施工費用，舊址光轉器收回汰換", "設備品項": "TP-Link FC311B-3 光纖收發器【汰換】*1=0"}, "光化FP(自購)|光化F|舊址備註": {"說明": "免收移機施工費用，舊址光轉器收回汰換", "設備品項": "TP-Link FC311B-3 光纖收發器【汰換】*1=0"}, "光化FP(自購)|光化F|支付1200": {"說明": "移機當日支付1200元移機施工費用，舊址光轉器收回汰換", "設備品項": "TP-Link FC311B-3 光纖收發器【汰換】*1=0"}, "光化FP(自購)|光化F|優待800": {"說明": "移機當日支付800元移機施工費用，舊址光轉器收回汰換", "設備品項": "TP-Link FC311B-3 光纖收發器【汰換】*1=0"}, "光化FP(自購)|光化FP|提前續繳": {"說明": "提前續繳8900/6000元，免收移機施工費用，光轉器(自購)沿用", "設備品項": "光纖設備沿用(NF810-1K)*1=0"}, "光化FP(自購)|光化FP|舊址備註": {"說明": "免收移機施工費用，光轉器(自購)沿用", "設備品項": "光纖設備沿用(NF810-1K)*1=0"}, "光化FP(自購)|光化FP|支付1200": {"說明": "移機當日支付1200元移機施工費用，光轉器(自購)沿用", "設備品項": "光纖設備沿用(NF810-1K)*1=0"}, "光化FP(自購)|光化FP|優待800": {"說明": "移機當日支付800元移機施工費用，光轉器(自購)沿用", "設備品項": "光纖設備沿用(NF810-1K)*1=0"}, "光化FP(贈品)|乙太|提前續繳": {"說明": "提前續繳8900/6000元，免收移機施工費用", "設備品項": "新址無需光轉器設備"}, "光化FP(贈品)|乙太|舊址備註": {"說明": "免收移機施工費用", "設備品項": "新址無需光轉器設備"}, "光化FP(贈品)|乙太|支付1200": {"說明": "移機當日支付1200元移機施工費用", "設備品項": "新址無需光轉器設備"}, "光化FP(贈品)|乙太|優待800": {"說明": "移機當日支付800元移機施工費用", "設備品項": "新址無需光轉器設備"}, "光化FP(贈品)|光化F|提前續繳": {"說明": "提前續繳8900/6000元，免收移機施工費用，舊址光轉器收回汰換", "設備品項": "TP-Link FC311B-3 光纖收發器+600【汰換】*1=0"}, "光化FP(贈品)|光化F|舊址備註": {"說明": "免收移機施工費用，舊址光轉器收回汰換", "設備品項": "TP-Link FC311B-3 光纖收發器+600【汰換】*1=0"}, "光化FP(贈品)|光化F|支付1200": {"說明": "移機當日支付1200元移機施工費用，舊址光轉器收回汰換", "設備品項": "TP-Link FC311B-3 光纖收發器+600【汰換】*1=0"}, "光化FP(贈品)|光化F|優待800": {"說明": "移機當日支付800元移機施工費用，舊址光轉器收回汰換", "設備品項": "TP-Link FC311B-3 光纖收發器+600【汰換】*1=0"}, "光化FP(贈品)|光化FP|提前續繳": {"說明": "提前續繳8900/6000元，免收移機施工費用，光轉器(贈品)沿用", "設備品項": "光纖贈品沿用(TP-LINK FC311B-3)*1=0"}, "光化FP(贈品)|光化FP|舊址備註": {"說明": "免收移機施工費用，光轉器(贈品)沿用", "設備品項": "光纖贈品沿用(TP-LINK FC311B-3)*1=0"}, "光化FP(贈品)|光化FP|支付1200": {"說明": "移機當日支付1200元移機施工費用，光轉器(贈品)沿用", "設備品項": "光纖贈品沿用(TP-LINK FC311B-3)*1=0"}, "光化FP(贈品)|光化FP|優待800": {"說明": "移機當日支付800元移機施工費用，光轉器(贈品)沿用", "設備品項": "光纖贈品沿用(TP-LINK FC311B-3)*1=0"}};
 
-  <!-- 第一層 -->
-  <div class="section active" id="page1">
-    <h2>第一層：舊址資訊</h2>
-    <div class="question">1. 到期狀況：
-      <select id="到期狀況">
-        <option>續繳單已出</option>
-        <option>一年內到期</option>
-        <option>一年後到期</option>
-      </select>
-    </div>
-    <div class="question">2. 舊址架構：
-      <select id="舊址架構">
-        <option>光化F</option>
-        <option>光化FP</option>
-        <option>乙太</option>
-      </select>
-    </div>
-    <div class="question">3. 舊光轉器狀態：
-      <select id="舊設備狀態">
-        <option>押金</option>
-        <option>贈品</option>
-        <option>自購</option>
-        <option>無</option>
-      </select>
-    </div>
-    <div class="question">4. 是否有免移機費用註記：
-      <select id="曾提及移機">
-        <option>是</option>
-        <option>否</option>
-      </select>
-    </div>
-    <button onclick="nextPage(1)">下一步</button>
-  </div>
-
-  <!-- 第二層 -->
-  <div class="section" id="page2">
-    <h2>第二層：新社區狀況</h2>
-    <div class="question">5. 新社區是否已上線？
-      <select id="新社區狀態">
-        <option>上線中</option>
-        <option>未上線-有意願等候</option>
-        <option>未上線-無意願等候</option>
-      </select>
-    </div>
-    <button onclick="nextPage(2)">下一步</button>
-  </div>
-
-  <!-- 第三層 -->
-  <div class="section" id="page3">
-    <h2>第三層：新址資訊</h2>
-    <div class="question">6. 新址架構：
-      <select id="新址架構">
-        <option>光化F</option>
-        <option>光化FP</option>
-        <option>乙太</option>
-      </select>
-    </div>
-    <div class="question">7. 是否有團購活動：
-      <select id="當日續繳">
-        <option>是</option>
-        <option>否</option>
-      </select>
-    </div>
-    <div class="question">8. 是否移機當日續繳：
-      <select id="當日續繳">
-        <option>是</option>
-        <option>否</option>
-      </select>
-    </div>
-    <button onclick="nextPage(3)">看結果</button>
-  </div>
-
-  <!-- 第四層：結果 -->
-  <div class="section" id="page4">
-    <h2>第四層：對應方案</h2>
-    <div id="output" class="result">（根據邏輯自動對應）</div>
-    <button onclick="location.reload()">重新查詢</button>
-  </div>
-
-  <script>
-    const rules = {
- "續繳單已出|光化F|無|是|上線中|光化F|是": "移機當日續繳8900元/6000元，免收移機施工費用1200元",
-    "續繳單已出|乙太|無|是|上線中|光化F|是": "移機當日續繳8900元/6000元，免收移機施工費用1200元，光轉器屬贈品(價值600元)",
-    "續繳單已出|光化F|贈品|是|上線中|光化F|是": "移機當日續繳8900元/6000元，免收移機施工費用1200元，光轉器贈品沿用。",
-    "續繳單已出|光化F|押金|是|上線中|光化F|是": "移機當日續繳8900元/6000元，免收移機施工費用1200元，光轉器押金沿用。",
-    "續繳單已出|光化F|贈品|是|上線中|光化FP|是": "移機當日續繳8900元/6000元，免收移機施工費用1200元，光轉器贈品汰換。",
-    "一年內到期|乙太|無|否|上線中|光化F|否": "移機當日支付1200元移機施工費用，將舊址剩餘月份天數帶至新址沿用。",
-    "一年後到期|光化F|贈品|否|上線中|光化F|否": "移機當日支付1200元移機施工費用，光轉器贈品沿用，將舊址剩餘月份天數帶至新址沿用。",
-    "續繳單已出|光化F|押金|否|上線中|光化F|否": "移機當日支付1200元移機施工費用，光轉器押金沿用，將舊址剩餘月份天數帶至新址沿用。",
-    "續繳單已出|光化F|贈品|否|上線中|光化FP|否": "移機當日支付1200元移機施工費用，光轉器贈品汰換，舊址設備需收回，將舊址剩餘月份天數帶至新址沿用。",
-    "一年後到期|乙太|無|否|上線中|光化FP|否": "移機當日支付1200元移機施工費用+600元光轉器費用，將舊址剩餘月份天數帶至新址沿用。",
-    "續繳單已出|光化FP|押金|否|上線中|光化F|否": "移機當日支付1200元移機施工費用+600元光轉器費用，將舊址剩餘月份天數帶至新址沿用，並將舊址光轉器收回待退押金。",
-    "一年後到期|光化FP|無|否|上線中|光化F|否": "因用戶抱怨，故優待移機施工費用為800元，將舊址剩餘月份天數帶至新址沿用。",
-    "續繳單已出|乙太|無|否|上線中|光化F|否": "因用戶抱怨，故優待移機施工費用為800元，但光轉器仍需自購600元，將舊址剩餘月份天數帶至新址沿用。",
-    "一年內到期|乙太|無|是|上線中|光化F|否": "移機當日免收移機施工費用，將舊址剩餘月份天數帶至新址沿用。",
-    "一年後到期|光化F|贈品|是|上線中|光化F|否": "移機當日免收移機施工費用，光轉器贈品沿用，將舊址剩餘月份天數帶至新址沿用。",
-    "一年後到期|光化F|押金|是|上線中|光化F|否": "移機當日免收移機施工費用，光轉器押金沿用，將舊址剩餘月份天數帶至新址沿用。",
-    "一年後到期|乙太|無|是|上線中|光化F|否": "移機當日免收移機施工費用，光轉器自購600元，將舊址剩餘月份天數帶至新址沿用。",
-    "一年後到期|光化F|贈品|是|上線中|光化FP|否": "移機當日免收移機施工費用，光轉器贈品汰換，將舊址剩餘月份天數帶至新址沿用。",
-    "續繳單已出|光化FP|押金|是|上線中|光化F|否": "移機當日免收移機施工費用，光轉器自購600元，將舊址剩餘月份天數帶至新址沿用，並將舊址光轉器收回待退押金。",
-    "一年內到期|乙太|無|是|未上線-有意願等候": "新址尚未進駐，有意願等候開發，故幫追蹤社區開發。",
-    "一年內到期|乙太|無|是|未上線-無意願等候": "新址尚未進駐，無意願等候開發，故協助退費或月份轉移。"    };
-
-    function nextPage(current) {
-      document.getElementById('page' + current).classList.remove('active');
-      document.getElementById('page' + (current + 1)).classList.add('active');
-
-      if (current === 3) {
-        const keys = [
-          '到期狀況', '舊址架構', '舊設備狀態', '曾提及移機',
-          '新社區狀態'
-        ];
-        if (document.getElementById('新社區狀態').value === '上線中') {
-          keys.push('新址架構', '當日續繳');
-        }
-        const userKey = keys.map(k => document.getElementById(k).value).join('|');
-        document.getElementById('output').innerText = rules[userKey] || '尚無對應方案，請聯繫客服。';
-      }
+function generate() {
+    const refundPolicy = document.getElementById("refundPolicy").checked;
+    const transferMonth = document.getElementById("transferMonth").checked;
+    const deviceRight = document.getElementById("deviceRight").checked;
+    if (!(refundPolicy && transferMonth && deviceRight)) {
+      alert("📢 請確認：所有補充提醒事項皆已告知用戶。");
+      return;
     }
-  </script>
+  const old = document.querySelector('input[name="old"]:checked')?.value;
+  const nw = document.querySelector('input[name="new"]:checked')?.value;
+  const plan = document.querySelector('input[name="plan"]:checked')?.value;
+
+  if (!old || !nw || !plan) {
+    document.getElementById("output").textContent = "請完整選擇三項條件";
+    document.getElementById("device").textContent = "";
+    return;
+  }
+
+  const key = old + "|" + nw + "|" + plan;
+  const data = solutionMap[key];
+
+  let result = data?.說明 || "⚠️ 尚未設定方案";
+  if (document.getElementById("groupBuy").checked)
+    result = result.replace("施工費用", "施工費用（參與團購）");
+
+  const extras = [];
+  if (document.getElementById("refundPolicy").checked) extras.push("退費規範已說明");
+  if (document.getElementById("transferMonth").checked) extras.push("待新址結單後月份轉移");
+  if (document.getElementById("ap保固").checked) extras.push("終保AP沿用需設定");
+
+  if (extras.length > 0) result += "，" + extras.join("，");
+
+  document.getElementById("output").textContent = result;
+  document.getElementById("device").textContent = "📦 工單設備品項：" + (data?.設備品項 || "未設定");
+}
+</script>
 </body>
 </html>
